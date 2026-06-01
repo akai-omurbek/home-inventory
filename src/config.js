@@ -9,5 +9,5 @@ export const CONFIG = {
   // The ID of the Google Sheet that will store your inventory.
   // Create a blank Google Sheet, share it with your household (Editor access),
   // then paste the long ID from its URL:  https://docs.google.com/spreadsheets/d/THIS_PART/edit
-  SPREADSHEET_ID: 'https://docs.google.com/spreadsheets/d/1OewzpdPmrKh2DEtPFDgVnkAPfKBQjmrLWVy0cNsl-oI/edit',
+  SPREADSHEET_ID: 'https://docs.google.com/spreadsheets/d/1OewzpdPmrKh2DEtPFDgVnkAPfKBQjmrLWVy0cNsl-oI/edit?usp=sharing',
 };
