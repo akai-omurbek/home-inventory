@@ -363,3 +363,62 @@ body {
 .qty-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .qty-btn:disabled { opacity: 0.4; cursor: default; }
 .qty-value { font-weight: 600; font-size: 1rem; min-width: 24px; text-align: center; }
+
+/* ─── View toolbar ───────────────────────────────────────────── */
+.view-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; gap: 8px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: sticky; top: 113px; z-index: 38;
+}
+.view-tabs { display: flex; gap: 4px; }
+.view-tab {
+  padding: 6px 12px; border-radius: 20px;
+  border: 1.5px solid transparent; background: transparent;
+  font-family: var(--font); font-size: 0.82rem; cursor: pointer;
+  color: var(--text-2); transition: all var(--transition); white-space: nowrap;
+}
+.view-tab:hover  { background: var(--surface-2); color: var(--text); }
+.view-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sort-select {
+  padding: 6px 10px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); font-family: var(--font);
+  font-size: 0.82rem; background: var(--bg); color: var(--text);
+  cursor: pointer;
+}
+
+/* ─── Grouped view sections ──────────────────────────────────── */
+.group-section { padding: 16px 16px 0; }
+.group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px; padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.group-name  { font-weight: 600; font-size: 0.95rem; }
+.group-count {
+  font-size: 0.78rem; font-weight: 600;
+  background: var(--accent-dim); color: var(--accent);
+  padding: 2px 8px; border-radius: 20px;
+}
+
+/* ─── Away card overlay ──────────────────────────────────────── */
+.item-away { opacity: 0.88; }
+.away-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(154,98,0,0.92), transparent);
+  padding: 10px 10px 8px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.away-label { color: #fff; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.away-sub   { color: rgba(255,255,255,0.85); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── Away banner in detail modal ────────────────────────────── */
+.away-banner {
+  background: var(--warning-dim); color: var(--warning);
+  padding: 10px 16px; font-size: 0.88rem; font-weight: 500;
+  border-bottom: 1px solid #f0d080;
+}
+
+/* ─── Away section in detail ─────────────────────────────────── */
+.detail-away-section { padding: 12px 0 4px; }
+.away-input-row { display: flex; flex-direction: column; gap: 4px; }
