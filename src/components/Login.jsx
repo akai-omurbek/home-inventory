@@ -34,13 +34,16 @@ export default function Login({ onSignIn }) {
       await onSignIn(password.trim());
       setAttempts(0);
     } catch (err) {
-      const next = attempts + 1;
-      setAttempts(next);
-      if (next >= MAX_ATTEMPTS) {
-        const secs = Math.min(BASE_LOCKOUT_S * Math.pow(2, Math.floor(next / MAX_ATTEMPTS) - 1), 300);
-        setLockoutEnd(Date.now() + secs * 1000);
+      const isWrongPassword = err.message === 'UNAUTHORIZED';
+      if (isWrongPassword) {
+        const next = attempts + 1;
+        setAttempts(next);
+        if (next >= MAX_ATTEMPTS) {
+          const secs = Math.min(BASE_LOCKOUT_S * Math.pow(2, Math.floor(next / MAX_ATTEMPTS) - 1), 300);
+          setLockoutEnd(Date.now() + secs * 1000);
+        }
       }
-      setError(err.message === 'UNAUTHORIZED' ? 'Wrong password. Try again.' : 'Could not connect. Check your Script URL in config.js.');
+      setError(isWrongPassword ? 'Wrong password. Try again.' : 'Could not connect. Check your Script URL in config.js.');
       setLoading(false);
     }
   }
