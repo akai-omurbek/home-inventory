@@ -182,8 +182,8 @@ export default function ItemList({ items, categories, locations, onAdd, onEdit, 
   const [catFilter, setCatFilter] = useState('');
   const [locFilter, setLocFilter] = useState(initialLocFilter ?? '');
   const [showQR, setShowQR]       = useState(false);
+  const [viewMode, setViewMode]   = useState(initialLocFilter ? 'location' : 'grid');
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode]   = useState('grid');
   const [sortOrder, setSortOrder] = useState('az');
   const [selectedItem, setSelectedItem] = useState(null);
 

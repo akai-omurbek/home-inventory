@@ -6,9 +6,9 @@ import { CONFIG } from '../config.js';
 
 const SESSION_KEY = 'inv_pwd';
 
-export function getStoredToken() { return sessionStorage.getItem(SESSION_KEY) || ''; }
-export function saveToken(t)     { sessionStorage.setItem(SESSION_KEY, t); }
-export function clearToken()     { sessionStorage.removeItem(SESSION_KEY); }
+export function getStoredToken() { return localStorage.getItem(SESSION_KEY) || ''; }
+export function saveToken(t)     { localStorage.setItem(SESSION_KEY, t); }
+export function clearToken()     { localStorage.removeItem(SESSION_KEY); }
 export function hasToken()       { return !!getStoredToken(); }
 
 export async function call(action, data = {}, token = null) {
