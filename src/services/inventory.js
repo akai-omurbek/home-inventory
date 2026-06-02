@@ -1,21 +1,15 @@
 // src/services/inventory.js
-// Domain logic on top of googleService.  All Sheets/Drive details stay here.
-
 import { googleService } from './google.js';
 import { CONFIG } from '../config.js';
 
-// ─── Column definitions (must match sheet column order) ────────
-
-const ITEM_COLS   = ['id','name','category','location','quantity','condition','barcode','photoId','notes','addedBy','addedDate','updatedDate'];
-const CAT_COLS    = ['id','name'];
-const LOC_COLS    = ['id','name','type','parentId','description'];
-
-// ─── Helpers ───────────────────────────────────────────────────
+const ITEM_COLS = ['id','name','category','location','quantity','condition','barcode','photoId','notes','addedBy','addedDate','updatedDate'];
+const CAT_COLS  = ['id','name'];
+const LOC_COLS  = ['id','name','type','parentId','description'];
 
 function rowsToObjects(values = [], cols) {
-  if (values.length < 2) return [];           // header-only or empty
+  if (values.length < 2) return [];
   return values.slice(1)
-    .filter(row => row[0])                    // skip blank rows
+    .filter(row => row[0])
     .map(row => Object.fromEntries(cols.map((c, i) => [c, row[i] ?? ''])));
 }
 
@@ -31,9 +25,7 @@ function today() {
   return new Date().toISOString().split('T')[0];
 }
 
-// ─── Sheet / ID cache ─────────────────────────────────────────
-
-let _sheetIds = null; // { Items: 0, Categories: 1, Locations: 2 }
+let _sheetIds = null;
 
 async function getSheetIds() {
   if (_sheetIds) return _sheetIds;
@@ -45,19 +37,16 @@ async function getSheetIds() {
   return _sheetIds;
 }
 
-// ─── Spreadsheet bootstrap ─────────────────────────────────────
+// ─── Bootstrap ────────────────────────────────────────────────
 
 export async function ensureSheets() {
-  // Check if Items header row exists
   const check = await googleService.sheetsGetValues(CONFIG.SPREADSHEET_ID, 'Items!A1').catch(() => null);
-  if (check?.values) return; // Already set up
+  if (check?.values) return;
 
-  // Write headers
-  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, 'Items!A1:L1',       [ITEM_COLS]);
-  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, 'Categories!A1:B1',  [CAT_COLS]);
-  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, 'Locations!A1:E1',   [LOC_COLS]);
+  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, 'Items!A1:L1',      [ITEM_COLS]);
+  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, 'Categories!A1:B1', [CAT_COLS]);
+  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, 'Locations!A1:E1',  [LOC_COLS]);
 
-  // Seed default categories
   await googleService.sheetsAppend(CONFIG.SPREADSHEET_ID, 'Categories!A:B', [
     ['cat-1','Clothing'],
     ['cat-2','Tools & Hardware'],
@@ -71,7 +60,6 @@ export async function ensureSheets() {
     ['cat-10','Other'],
   ]);
 
-  // Seed default locations
   await googleService.sheetsAppend(CONFIG.SPREADSHEET_ID, 'Locations!A:E', [
     ['loc-1','Living Room','room','',''],
     ['loc-2','Kitchen','room','',''],
@@ -105,11 +93,9 @@ export async function addItem(item) {
 }
 
 export async function updateItem(item) {
-  // Find row by ID
   const data = await googleService.sheetsGetValues(CONFIG.SPREADSHEET_ID, 'Items!A:A');
   const rowIdx = (data.values ?? []).findIndex(r => r[0] === item.id);
   if (rowIdx < 0) throw new Error(`Item ${item.id} not found`);
-
   const updated = { ...item, updatedDate: today() };
   const rowNum = rowIdx + 1;
   await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, `Items!A${rowNum}:L${rowNum}`, [objectToRow(updated, ITEM_COLS)]);
@@ -120,7 +106,6 @@ export async function deleteItem(itemId) {
   const data = await googleService.sheetsGetValues(CONFIG.SPREADSHEET_ID, 'Items!A:A');
   const rowIdx = (data.values ?? []).findIndex(r => r[0] === itemId);
   if (rowIdx < 0) return;
-
   const ids = await getSheetIds();
   await googleService.sheetsDeleteRow(CONFIG.SPREADSHEET_ID, ids['Items'] ?? 0, rowIdx);
 }
@@ -138,6 +123,23 @@ export async function addCategory(name) {
   return cat;
 }
 
+export async function updateCategory(cat) {
+  const data = await googleService.sheetsGetValues(CONFIG.SPREADSHEET_ID, 'Categories!A:A');
+  const rowIdx = (data.values ?? []).findIndex(r => r[0] === cat.id);
+  if (rowIdx < 0) throw new Error('Category not found');
+  const rowNum = rowIdx + 1;
+  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, `Categories!A${rowNum}:B${rowNum}`, [objectToRow(cat, CAT_COLS)]);
+  return cat;
+}
+
+export async function deleteCategory(catId) {
+  const data = await googleService.sheetsGetValues(CONFIG.SPREADSHEET_ID, 'Categories!A:A');
+  const rowIdx = (data.values ?? []).findIndex(r => r[0] === catId);
+  if (rowIdx < 0) return;
+  const ids = await getSheetIds();
+  await googleService.sheetsDeleteRow(CONFIG.SPREADSHEET_ID, ids['Categories'] ?? 1, rowIdx);
+}
+
 // ─── Locations ────────────────────────────────────────────────
 
 export async function getLocations() {
@@ -151,13 +153,35 @@ export async function addLocation(location) {
   return loc;
 }
 
+export async function updateLocation(loc) {
+  const data = await googleService.sheetsGetValues(CONFIG.SPREADSHEET_ID, 'Locations!A:A');
+  const rowIdx = (data.values ?? []).findIndex(r => r[0] === loc.id);
+  if (rowIdx < 0) throw new Error('Location not found');
+  const rowNum = rowIdx + 1;
+  await googleService.sheetsUpdate(CONFIG.SPREADSHEET_ID, `Locations!A${rowNum}:E${rowNum}`, [objectToRow(loc, LOC_COLS)]);
+  return loc;
+}
+
+export async function deleteLocation(locId) {
+  const data = await googleService.sheetsGetValues(CONFIG.SPREADSHEET_ID, 'Locations!A:A');
+  const rowIdx = (data.values ?? []).findIndex(r => r[0] === locId);
+  if (rowIdx < 0) return;
+  const ids = await getSheetIds();
+  await googleService.sheetsDeleteRow(CONFIG.SPREADSHEET_ID, ids['Locations'] ?? 2, rowIdx);
+}
+
 // ─── Photos ───────────────────────────────────────────────────
 
 let _photosFolder = null;
 
 async function getPhotosFolder() {
   if (_photosFolder) return _photosFolder;
-  _photosFolder = await googleService.driveFindOrCreateFolder('home-inventory-photos');
+  // Use shared folder from config if set, otherwise auto-create
+  if (CONFIG.PHOTOS_FOLDER_ID) {
+    _photosFolder = CONFIG.PHOTOS_FOLDER_ID;
+  } else {
+    _photosFolder = await googleService.driveFindOrCreateFolder('home-inventory-photos');
+  }
   return _photosFolder;
 }
 

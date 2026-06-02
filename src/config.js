@@ -4,10 +4,19 @@
 
 export const CONFIG = {
   // From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID
-  CLIENT_ID: '83246730880-afgt1t5k38lokqes9ttldso10nb5p6rf.apps.googleusercontent.com',
+  CLIENT_ID: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
 
-  // The ID of the Google Sheet that will store your inventory.
-  // Create a blank Google Sheet, share it with your household (Editor access),
-  // then paste the long ID from its URL:  https://docs.google.com/spreadsheets/d/THIS_PART/edit
-  SPREADSHEET_ID: '1OewzpdPmrKh2DEtPFDgVnkAPfKBQjmrLWVy0cNsl-oI',
+  // The ID from your Google Sheet URL:
+  // https://docs.google.com/spreadsheets/d/THIS_PART/edit
+  SPREADSHEET_ID: 'YOUR_SPREADSHEET_ID',
+
+  // Shared photos folder — recommended for households.
+  // 1. Create a folder in YOUR Google Drive
+  // 2. Share it with all household members (Editor access)
+  // 3. Get the folder ID from its URL:
+  //    https://drive.google.com/drive/folders/THIS_PART
+  // 4. Paste it below.
+  //
+  // If left empty, each user's photos go into their own Drive (not shared).
+  PHOTOS_FOLDER_ID: '',
 };
