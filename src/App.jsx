@@ -16,8 +16,15 @@ import ItemList from './components/ItemList.jsx';
 import ItemForm from './components/ItemForm.jsx';
 import Settings from './components/Settings.jsx';
 
+function readLocParam() {
+  const param = new URLSearchParams(window.location.search).get('loc') ?? '';
+  if (param) window.history.replaceState({}, '', window.location.pathname);
+  return param;
+}
+
 export default function App() {
   const [authed, setAuthed]         = useState(false);
+  const [initialLocFilter]          = useState(readLocParam);
   const [authChecking, setAuthChecking] = useState(true); // checking sessionStorage on load
   const [view, setView]             = useState('list');
   const [editTarget, setEditTarget] = useState(null);
@@ -127,6 +134,7 @@ export default function App() {
           onEdit={item => { setEditTarget(item); setView('edit'); }}
           onDelete={handleDelete} onRefresh={() => loadData({ skipCache: true })}
           onUpdateItem={handleUpdateItem} onSettings={() => setView('settings')}
+          initialLocFilter={initialLocFilter}
         />
       )}
 
