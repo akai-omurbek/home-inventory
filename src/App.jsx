@@ -1,19 +1,17 @@
 // src/App.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { googleService } from './services/google.js';
+import { call, hasToken, saveToken, clearToken, getStoredToken } from './services/api.js';
 import { ensureSheets, getItems, getCategories, getLocations,
   addItem, updateItem, deleteItem, deletePhoto } from './services/inventory.js';
-import { CONFIG } from './config.js';
 import Login from './components/Login.jsx';
 import ItemList from './components/ItemList.jsx';
 import ItemForm from './components/ItemForm.jsx';
 import Settings from './components/Settings.jsx';
 
 export default function App() {
-  const [ready, setReady]       = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [view, setView]         = useState('list');
+  const [authed, setAuthed]         = useState(false);
+  const [authChecking, setAuthChecking] = useState(true); // checking sessionStorage on load
+  const [view, setView]             = useState('list');
   const [editTarget, setEditTarget] = useState(null);
   const [items, setItems]           = useState([]);
   const [categories, setCategories] = useState([]);
@@ -21,12 +19,20 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [toast, setToast]           = useState(null);
 
+  // On load, check if there's a saved session
   useEffect(() => {
-    googleService.init(CONFIG.CLIENT_ID).then(() => setReady(true));
-    googleService.on(event => {
-      if (event.signedIn === true)  { setSignedIn(true); setAuthLoading(false); }
-      if (event.signedIn === false) { setSignedIn(false); setItems([]); setCategories([]); setLocations([]); }
-    });
+    if (hasToken()) {
+      // Validate saved token with a quick ping
+      call('ping').then(() => {
+        setAuthed(true);
+        setAuthChecking(false);
+      }).catch(() => {
+        clearToken();
+        setAuthChecking(false);
+      });
+    } else {
+      setAuthChecking(false);
+    }
   }, []);
 
   const loadData = useCallback(async () => {
@@ -35,21 +41,24 @@ export default function App() {
       await ensureSheets();
       const [i, c, l] = await Promise.all([getItems(), getCategories(), getLocations()]);
       setItems(i); setCategories(c); setLocations(l);
-    } catch (e) { showToast('Failed to load data: ' + e.message); }
-    finally { setDataLoading(false); }
+    } catch (e) {
+      if (e.code === 'UNAUTHORIZED') { clearToken(); setAuthed(false); return; }
+      showToast('Failed to load: ' + e.message);
+    } finally { setDataLoading(false); }
   }, []);
 
-  useEffect(() => { if (signedIn) loadData(); }, [signedIn, loadData]);
+  useEffect(() => { if (authed) loadData(); }, [authed, loadData]);
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000); }
 
-  async function handleSignIn() {
-    setAuthLoading(true);
-    try { await googleService.signIn(); }
-    catch (e) { setAuthLoading(false); showToast('Sign-in failed: ' + e.message); }
+  async function handleLogin(password) {
+    // Validate by calling ping — throws UNAUTHORIZED if wrong
+    await call('ping', {}, password);
+    saveToken(password);
+    setAuthed(true);
   }
 
-  function handleSignOut() { googleService.signOut(); setView('list'); }
+  function handleSignOut() { clearToken(); setAuthed(false); setView('list'); setItems([]); setCategories([]); setLocations([]); }
 
   async function handleSave(formData) {
     if (editTarget) {
@@ -73,7 +82,6 @@ export default function App() {
     } catch (e) { showToast('Delete failed: ' + e.message); }
   }
 
-  // Generic item updater — used for quantity, status, etc.
   async function handleUpdateItem(item) {
     try {
       const updated = await updateItem(item);
@@ -88,8 +96,8 @@ export default function App() {
     showToast('Saved');
   }
 
-  if (!ready) return <div className="loading"><div className="spinner" /></div>;
-  if (!signedIn) return <Login onSignIn={handleSignIn} loading={authLoading} />;
+  if (authChecking) return <div className="loading"><div className="spinner" /></div>;
+  if (!authed) return <Login onSignIn={handleLogin} />;
 
   return (
     <div className="app">
@@ -98,10 +106,8 @@ export default function App() {
           items={items} categories={categories} locations={locations} loading={dataLoading}
           onAdd={() => { setEditTarget(null); setView('add'); }}
           onEdit={item => { setEditTarget(item); setView('edit'); }}
-          onDelete={handleDelete}
-          onRefresh={loadData}
-          onUpdateItem={handleUpdateItem}
-          onSettings={() => setView('settings')}
+          onDelete={handleDelete} onRefresh={loadData}
+          onUpdateItem={handleUpdateItem} onSettings={() => setView('settings')}
         />
       )}
 
