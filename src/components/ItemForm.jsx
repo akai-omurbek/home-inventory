@@ -1,6 +1,6 @@
 // src/components/ItemForm.jsx
-import { useState, useRef } from 'react';
-import BarcodeScanner from './BarcodeScanner.jsx';
+import { useState, useRef, lazy, Suspense } from 'react';
+const BarcodeScanner = lazy(() => import('./BarcodeScanner.jsx'));
 import { uploadPhoto } from '../services/inventory.js';
 
 const CONDITIONS = ['New', 'Good', 'Fair', 'Poor'];
@@ -71,10 +71,12 @@ export default function ItemForm({ item, categories, locations, onSave, onCancel
   return (
     <>
       {showScanner && (
-        <BarcodeScanner
-          onScan={code => { set('barcode', code); setShowScanner(false); }}
-          onClose={() => setShowScanner(false)}
-        />
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            onScan={code => { set('barcode', code); setShowScanner(false); }}
+            onClose={() => setShowScanner(false)}
+          />
+        </Suspense>
       )}
 
       <div className="form-page">

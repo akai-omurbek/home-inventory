@@ -2,7 +2,12 @@
 import { call } from './api.js';
 
 // ─── Bootstrap ────────────────────────────────────────────────
-export async function ensureSheets() { await call('ensureSheets'); }
+const SHEETS_OK_KEY = 'inv_sheets_ok';
+export async function ensureSheets() {
+  if (localStorage.getItem(SHEETS_OK_KEY)) return;
+  await call('ensureSheets');
+  localStorage.setItem(SHEETS_OK_KEY, '1');
+}
 
 // ─── Items ────────────────────────────────────────────────────
 export async function getItems()       { const r = await call('getItems');  return r.items ?? []; }

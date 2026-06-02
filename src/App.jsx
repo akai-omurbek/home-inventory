@@ -1,6 +1,14 @@
 // src/App.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { call, hasToken, saveToken, clearToken, getStoredToken } from './services/api.js';
+
+const CACHE_KEY = 'inv_data_cache';
+function readCache() {
+  try { return JSON.parse(sessionStorage.getItem(CACHE_KEY)); } catch { return null; }
+}
+function writeCache(items, categories, locations) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ items, categories, locations })); } catch {}
+}
 import { ensureSheets, getItems, getCategories, getLocations,
   addItem, updateItem, deleteItem, deletePhoto } from './services/inventory.js';
 import Login from './components/Login.jsx';
@@ -35,16 +43,27 @@ export default function App() {
     }
   }, []);
 
-  const loadData = useCallback(async () => {
-    setDataLoading(true);
+  const loadData = useCallback(async ({ skipCache = false, silent = false } = {}) => {
+    if (!skipCache) {
+      const cached = readCache();
+      if (cached) {
+        setItems(cached.items); setCategories(cached.categories); setLocations(cached.locations);
+        loadData({ skipCache: true, silent: true }); // background refresh
+        return;
+      }
+    }
+    if (!silent) setDataLoading(true);
     try {
       await ensureSheets();
       const [i, c, l] = await Promise.all([getItems(), getCategories(), getLocations()]);
       setItems(i); setCategories(c); setLocations(l);
+      writeCache(i, c, l);
     } catch (e) {
-      if (e.code === 'UNAUTHORIZED') { clearToken(); setAuthed(false); return; }
-      showToast('Failed to load: ' + e.message);
-    } finally { setDataLoading(false); }
+      if (!silent) {
+        if (e.code === 'UNAUTHORIZED') { clearToken(); setAuthed(false); return; }
+        showToast('Failed to load: ' + e.message);
+      }
+    } finally { if (!silent) setDataLoading(false); }
   }, []);
 
   useEffect(() => { if (authed) loadData(); }, [authed, loadData]);
@@ -58,7 +77,7 @@ export default function App() {
     setAuthed(true);
   }
 
-  function handleSignOut() { clearToken(); setAuthed(false); setView('list'); setItems([]); setCategories([]); setLocations([]); }
+  function handleSignOut() { clearToken(); sessionStorage.removeItem(CACHE_KEY); setAuthed(false); setView('list'); setItems([]); setCategories([]); setLocations([]); }
 
   async function handleSave(formData) {
     if (editTarget) {
@@ -106,7 +125,7 @@ export default function App() {
           items={items} categories={categories} locations={locations} loading={dataLoading}
           onAdd={() => { setEditTarget(null); setView('add'); }}
           onEdit={item => { setEditTarget(item); setView('edit'); }}
-          onDelete={handleDelete} onRefresh={loadData}
+          onDelete={handleDelete} onRefresh={() => loadData({ skipCache: true })}
           onUpdateItem={handleUpdateItem} onSettings={() => setView('settings')}
         />
       )}
